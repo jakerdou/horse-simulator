@@ -10,7 +10,8 @@ def court(axes):
     axes.add_artist(mpl.patches.Arc((0, 330), 440, 315, theta1=0, theta2=180, angle=180, facecolor='none', edgecolor='black', lw=2))
     axes.plot([-80, -80], [280, 470], linewidth=2, color='black')
     axes.plot([80, 80], [280, 470], linewidth=2, color='black')
-
+    axes.plot([-60, -60], [280, 470], linewidth=2, color='black')
+    axes.plot([60, 60], [280, 470], linewidth=2, color='black')
     axes.plot([-80, 80], [280, 280], linewidth=2, color='black')
     axes.add_artist(mpl.patches.Circle((0, 280), 60, facecolor='none', edgecolor='black', lw=2))   #key
     axes.add_artist(mpl.patches.Circle((0, 430), 15, facecolor='none', edgecolor='black', lw=2))   #rim
@@ -19,17 +20,19 @@ def court(axes):
     axes.set_ylim(0, 470)
 
 def make(x, y):
-    axes.add_artist(mpl.patches.Circle((x,y), 12, facecolor='none', edgecolor='green', lw=2))  # rim
+    axes.add_artist(mpl.patches.Circle((x,y), 12, facecolor='none', fill='true',edgecolor='green', lw=1))
 
 def miss(x, y):
-    axes.plot([x, y], [x, y], linewidth=2, color='red')
-    axes.plot([x, y], [y, x], linewidth=2, color='red')
+    axes.plot(x, y, marker="x", color="red", markersize=15)
 
 fig = plt.figure(figsize=(5, 4.5))
 axes = fig.add_axes([0, 0, 1, 1])
-miss(40, 20)   #y is x -20
+
+miss(-120, 300)
+miss(40, 20)
 miss(90, 70)
 make(100, 80)
+make(150, 350)
 
-ax = court(axes)
+court(axes)
 plt.show()
