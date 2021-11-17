@@ -1,75 +1,44 @@
-import PySimpleGUI as sg
+# 1. calibrate distance measurements
+    # ask user for user_height
+    # tell user to stand a certain distance (2 feet?) away from the camera
+    # sleep(5) (wait 5 seconds for person to get in position)
+    # capture number of pixels tall the person is
+    # using height and number of pixels, calculate focal_length
 
-sg.theme('DarkAmber')   # Add a touch of color
-# All the stuff inside your window.
-menu_layout = [
-    [sg.Text('Horse Simulator')],
-    [sg.Text('Please select a mode')],
-    [sg.Button('Shootaround'), sg.Button('Single Player'), sg.Button('Multiplayer')]
-]
+# 2. pop up GUI
+    # 2a. shootaround mode is clicked
+        # start video feed
+        # while cancel is not pressed
+            # if person is detected in video feed
+                # turn LED green
+                # if shot is detected in video feed
+                    # calculate distance of person
+                    # turn LED red
+                    # sleep(5) (wait 5 seconds)
+                    # if distance sensor detected object less than certain distance (6 inches?) away
+                        # count shot as made
+                    # else
+                        # count shot as missed
+        # display shot chart
+        # return to home menu
 
-shootaround_layout = [
-    [sg.Text('Horse Simulator')],
-    [sg.Text('This is the Shootaround mode')],
-    [sg.Button('Cancel')]
-]
-
-single_player_layout = [
-    [sg.Text('Horse Simulator')],
-    [sg.Text('This is the Single Player mode')],
-    [sg.Button('Cancel')]
-]
-
-multiplayer_layout = [
-    [sg.Text('Horse Simulator')],
-    [sg.Text('This is the Multiplayer mode')],
-    [sg.Button('Cancel')]
-]
-
-layout = [[
-    sg.Column(menu_layout, key='menu'),
-    sg.Column(shootaround_layout, key='shootaround', visible=False),
-    sg.Column(single_player_layout, key='single_player', visible=False),
-    sg.Column(multiplayer_layout, key='multiplayer', visible=False)
-]]
-
-# Create the Window
-window = sg.Window('Window Title', layout)
-# Event Loop to process "events" and get the "values" of the inputs
-mode = 'menu'
-while True:
-    event, values = window.read()
-    if event == sg.WIN_CLOSED: # if user closes window or clicks cancel
-        break
-
-    if mode == 'menu':
-        if event == 'Shootaround':
-            window['menu'].update(visible=False)
-            window['shootaround'].update(visible=True)
-            mode = 'shootaround'
-        elif event == 'Single Player':
-            window['menu'].update(visible=False)
-            window['single_player'].update(visible=True)
-            mode = 'single_player'
-        elif event == 'Multiplayer':
-            window['menu'].update(visible=False)
-            window['multiplayer'].update(visible=True)
-            mode = 'multiplayer'
-
-    elif mode == 'shootaround':
-        if event == 'Cancel':
-            window['shootaround'].update(visible=False)
-            window['menu'].update(visible=True)
-            mode = 'menu'
-    elif mode == 'single_player':
-        if event == 'Cancel0':
-            window['single_player'].update(visible=False)
-            window['menu'].update(visible=True)
-            mode = 'menu'
-    elif mode == 'multiplayer':
-        if event == 'Cancel1':
-            window['multiplayer'].update(visible=False)
-            window['menu'].update(visible=True)
-            mode = 'menu'
-
-window.close()
+    # 2b. single player mode is pressed
+        # start video feed
+        # shots missed = 0
+        # shots made = 0
+        # turn LED red
+        # while cancel is not pressed and shots missed < 5
+            # select distance for shot to be taken
+            # if person detected in video feed
+                # if person is correct distance away
+                    # turn LED green
+                    # if shot is detected in video feed
+                        # calculate distance of person
+                        # turn LED red
+                        # sleep(5) (wait 5 seconds)
+                        # if distance sensor detected object less than certain distance (6 inches?) away
+                            # shots made ++
+                        # else
+                            # shots missed ++
+        # display shots made (score)
+        # return to home menu
