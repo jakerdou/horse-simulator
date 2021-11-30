@@ -19,20 +19,8 @@ def court(axes):
     axes.set_xlim(-250, 250)
     axes.set_ylim(0, 470)
 
-def make(x, y):
+def make(axes, x, y):
     axes.add_artist(mpl.patches.Circle((x,y), 12, facecolor='none', fill='true',edgecolor='green', lw=1))
 
-def miss(x, y):
+def miss(axes, x, y):
     axes.plot(x, y, marker="x", color="red", markersize=15)
-
-fig = plt.figure(figsize=(5, 4.5))
-axes = fig.add_axes([0, 0, 1, 1])
-
-miss(-120, 300)
-miss(40, 20)
-miss(90, 70)
-make(100, 80)
-make(150, 350)
-
-court(axes)
-plt.show()
