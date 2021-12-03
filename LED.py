@@ -6,6 +6,7 @@ GPIO.setmode(GPIO.BCM)
 red = 16
 green = 26
 
+
 GPIO.setup(red, GPIO.OUT)
 GPIO.setup(green, GPIO.OUT)
 
@@ -23,6 +24,3 @@ def red_light():      #not in camera view
 
 def off(pin):
     GPIO.output(pin, 0)
-
-off(red)
-off(green)
