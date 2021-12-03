@@ -38,15 +38,17 @@ def distance():
     distance = (TimeElapsed * 34300) / 2
     
     return distance
+
+def confirm_shot(d):
+    if d <= 35:
+        return True
+    else:
+        return False
+
+
+# while True:
+#     dist = distance()
+#     if confirm_shot(dist) == True:
+#         print("Shot hit")
+#     print ("Measured Distance = %.1f cm" % dist)
  
-if __name__ == '__main__':
-    try:
-        while True:
-            dist = distance()
-            print ("Measured Distance = %.1f cm" % dist)
-            time.sleep(1)
- 
-        # Reset by pressing CTRL + C
-    except KeyboardInterrupt:
-        print("Measurement stopped by User")
-        GPIO.cleanup()

@@ -24,6 +24,3 @@ def red_light():      #not in camera view
 
 def off(pin):
     GPIO.output(pin, 0)
-
-off(red)
-off(green)

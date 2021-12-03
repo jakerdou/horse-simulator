@@ -24,3 +24,8 @@ def make(axes, x, y):
 
 def miss(axes, x, y):
     axes.plot(x, y, marker="x", color="red", markersize=15)
+
+# fig = plt.figure(figsize=(5, 4.5))
+# axes = fig.add_axes([0, 0, 1, 1])
+# court(axes)
+# plt.show()
