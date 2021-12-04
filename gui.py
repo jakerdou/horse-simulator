@@ -160,8 +160,8 @@ while True:
                 #     # minSize=(30,30)
                 # )
 
-                greenLower = (7, 141, 80)
-                greenUpper = (15, 206, 206)
+                orangeLower = (7, 141, 80)
+                orangeUpper = (15, 206, 206)
                 pts = deque(maxlen=64)
 
                 # frame_ball = imutils.resize(frame, width=600)
@@ -172,7 +172,7 @@ while True:
                 # construct a mask for the color "green", then perform
                 # a series of dilations and erosions to remove any small
                 # blobs left in the mask
-                mask = cv2.inRange(hsv, greenLower, greenUpper)
+                mask = cv2.inRange(hsv, orangeLower, orangeUpper)
                 mask = cv2.erode(mask, None, iterations=2)
                 mask = cv2.dilate(mask, None, iterations=2)
                 # print(mask)
