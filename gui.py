@@ -1,5 +1,8 @@
 import PySimpleGUI as sg
+import numpy as np
 import cv2
+import imutils
+from collections import deque
 from matplotlib.ticker import NullFormatter
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from shotchart import *
@@ -75,8 +78,10 @@ shotchart_layout = [
 ]
 
 layout = [[
-    sg.Column(menu_layout, key='menu'),
-    sg.Column(shootaround_layout, key='shootaround', visible=False),
+    # sg.Column(menu_layout, key='menu'),
+    sg.Column(menu_layout, key='menu', visible=False),
+    # sg.Column(shootaround_layout, key='shootaround', visible=False),
+    sg.Column(shootaround_layout, key='shootaround'),
     sg.Column(single_player_layout, key='single_player', visible=False),
     sg.Column(multiplayer_layout, key='multi_player', visible=False),
     sg.Column(camera_layout, key='camera', visible=False),
@@ -88,7 +93,8 @@ layout = [[
 # Create the Window
 window = sg.Window('HORSE Simulator', layout, location=(100, 100))
 # Event Loop to process "events" and get the "values" of the inputs
-mode = 'menu'
+# mode = 'menu'
+mode = 'shootaround'
 
 feet = 0
 inches = 0
@@ -122,13 +128,14 @@ while True:
             mode = 'multi_player'
 
     elif mode == 'shootaround':
+        print('in shootaround')
         #opening page, enter height and click ok, else cancel and return to main
         if event == 'OK':
             feet = values[0]
             inches = values[1]
             window['shootaround'].update(visible=False)
             window['camera'].update(visible=True)
-            
+
             cap = cv2.VideoCapture(0)
             if cap.isOpened():
                 pedestrian_cascade = cv2.CascadeClassifier('./haarcascade_fullbody.xml')
@@ -136,29 +143,110 @@ while True:
             while event != 'Finished':
                 event, values = window.read(timeout=20)
                 ret, frame = cap.read()
-                pedestrians = pedestrian_cascade.detectMultiScale(frame, 1.1, 1)
-                balls = ball_cascade.detectMultiScale(frame, 1.3, 3, 8)
+                # pedestrians = pedestrian_cascade.detectMultiScale(frame, 1.1, 1)
+                # pedestrians = pedestrian_cascade.detectMultiScale(
+                #     frame,
+                #     scaleFactor=1.05,
+                #     minNeighbors=8,
+                # )
+                HOGCV = cv2.HOGDescriptor()
+                HOGCV.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
+                pedestrians, weights =  HOGCV.detectMultiScale(frame, winStride = (4, 4), padding = (8, 8), scale = 1.03)
+
+                # balls = ball_cascade.detectMultiScale(
+                #     frame,
+                #     scaleFactor=1.15,
+                #     minNeighbors=3,
+                #     # minSize=(30,30)
+                # )
+
+                greenLower = (7, 141, 80)
+                greenUpper = (15, 206, 206)
+                pts = deque(maxlen=64)
+
+                # frame_ball = imutils.resize(frame, width=600)
+                # blurred = cv2.GaussianBlur(frame_ball, (11, 11), 0)
+                blurred = cv2.GaussianBlur(frame, (11, 11), 0)
+                hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
+
+                # construct a mask for the color "green", then perform
+                # a series of dilations and erosions to remove any small
+                # blobs left in the mask
+                mask = cv2.inRange(hsv, greenLower, greenUpper)
+                mask = cv2.erode(mask, None, iterations=2)
+                mask = cv2.dilate(mask, None, iterations=2)
+                # print(mask)
+                # print(type(mask))
+
+                # find contours in the mask and initialize the current
+                # (x, y) center of the ball
+                cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
+                	cv2.CHAIN_APPROX_SIMPLE)
+                cnts = imutils.grab_contours(cnts)
+                center = None
+
+                # only proceed if at least one contour was found
+                if len(cnts) > 0:
+                	# find the largest contour in the mask, then use
+                	# it to compute the minimum enclosing circle and
+                	# centroid
+                	c = max(cnts, key=cv2.contourArea)
+                	((x, y), radius) = cv2.minEnclosingCircle(c)
+                	M = cv2.moments(c)
+                	center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+
+                	# only proceed if the radius meets a minimum size
+                	if radius > 10:
+                		# draw the circle and centroid on the frame,
+                		# then update the list of tracked points
+                		cv2.circle(frame, (int(x), int(y)), int(radius),
+                			(0, 255, 255), 2)
+                		cv2.circle(frame, center, 5, (0, 0, 255), -1)
+
+                # update the points queue
+                pts.appendleft(center)
+
+                # loop over the set of tracked points
+                for i in range(1, len(pts)):
+                	# if either of the tracked points are None, ignore
+                	# them
+                	if pts[i - 1] is None or pts[i] is None:
+                		continue
+
+                	# otherwise, compute the thickness of the line and
+                	# draw the connecting lines
+                	thickness = int(np.sqrt(64 / float(i + 1)) * 2.5)
+                	cv2.line(frame, pts[i - 1], pts[i], (0, 0, 255), thickness)
+
                 # To draw a rectangle in each pedestrians
-                cv2.imshow('Ball detection', frame)
-                for (x,y,w,h) in balls:
-                   cv2.rectangle(frame,(x,y),(x+w,y+h),(0,0,255),2)
-                   font = cv2.FONT_HERSHEY_DUPLEX
-                   cv2.putText(frame, 'Ball', (x + 6, y - 6), font, 0.5, (0, 0, 255), 1)
+                # for (x,y,w,h) in balls:
+                #    cv2.rectangle(frame,(x,y),(x+w,y+h),(0,0,255),2)
+                #    font = cv2.FONT_HERSHEY_DUPLEX
+                #    cv2.putText(frame, 'Ball', (x + 6, y - 6), font, 0.5, (0, 0, 255), 1)
+
                 for (x,y,w,h) in pedestrians:
                   cv2.rectangle(frame,(x,y),(x+w,y+h),(0,255,0),2)
                   font = cv2.FONT_HERSHEY_DUPLEX
                   cv2.putText(frame, 'Person', (x + 6, y - 6), font, 0.5, (0, 255, 0), 1)
                 #Display frames in a window
-                cv2.imshow('Ball detection', frame)
-                imgbytes = cv2.imencode('.png', frame)[1].tobytes() 
+                # cv2.imshow('Ball detection', frame)
+
+                scale_percent = 130 # percent of original size
+                width = int(frame.shape[1] * scale_percent / 100)
+                height = int(frame.shape[0] * scale_percent / 100)
+                dim = (width, height)
+
+                # resize image
+                resized_frame = cv2.resize(frame, dim, interpolation = cv2.INTER_AREA)
+                imgbytes = cv2.imencode('.png', resized_frame)[1].tobytes()
                 window['image'].update(data=imgbytes)
-        
+
         if event == 'Cancel':
             window['shootaround'].update(visible=False)
             window['camera'].update(visible=False)
             window['menu'].update(visible=True)
             mode = 'menu'
-        # after youre done shooting, camera mode is off 
+        # after youre done shooting, camera mode is off
         if event == 'Finished':
             cv2.destroyAllWindows()
             window['camera'].update(visible=False)
@@ -183,7 +271,7 @@ while True:
             inches = values[3]
             window['single_player'].update(visible=False)
             window['singleplayer_scoreboard'].update(visible=True)
-            
+
             cap = cv2.VideoCapture(0)
             if cap.isOpened():
                 pedestrian_cascade = cv2.CascadeClassifier('./haarcascade_fullbody.xml')
@@ -194,7 +282,7 @@ while True:
                 pedestrians = pedestrian_cascade.detectMultiScale(frame, 1.1, 1)
                 balls = ball_cascade.detectMultiScale(frame, 1.3, 3, 8)
                 # To draw a rectangle in each pedestrians
-                cv2.imshow('Ball detection', frame)
+                # cv2.imshow('Ball detection', frame)
                 for (x,y,w,h) in balls:
                    cv2.rectangle(frame,(x,y),(x+w,y+h),(0,0,255),2)
                    font = cv2.FONT_HERSHEY_DUPLEX
@@ -204,10 +292,10 @@ while True:
                   font = cv2.FONT_HERSHEY_DUPLEX
                   cv2.putText(frame, 'Person', (x + 6, y - 6), font, 0.5, (0, 255, 0), 1)
                 #Display frames in a window
-                cv2.imshow('Ball detection', frame)
-                imgbytes = cv2.imencode('.png', frame)[1].tobytes() 
+                # cv2.imshow('Ball detection', frame)
+                imgbytes = cv2.imencode('.png', frame)[1].tobytes()
                 window['sp_image'].update(data=imgbytes)
-        
+
         if event == 'Finished5':
             cv2.destroyAllWindows()
             window['singleplayer_scoreboard'].update(visible=False)
@@ -220,7 +308,7 @@ while True:
             window['shotchart'].update(visible=False)
             window['menu'].update(visible=True)
             mode = 'menu'
-            
+
     elif mode == 'multi_player':
         if event == 'Cancel3':
             window['camera'].update(visible=False)
@@ -234,7 +322,7 @@ while True:
             inches2 = values[7]
             window['multi_player'].update(visible=False)
             window['multiplayer_scoreboard'].update(visible=True)
-            
+
             cap = cv2.VideoCapture(0)
             if cap.isOpened():
                 pedestrian_cascade = cv2.CascadeClassifier('./haarcascade_fullbody.xml')
@@ -245,7 +333,7 @@ while True:
                 pedestrians = pedestrian_cascade.detectMultiScale(frame, 1.1, 1)
                 balls = ball_cascade.detectMultiScale(frame, 1.3, 3, 8)
                 # To draw a rectangle in each pedestrians
-                cv2.imshow('Ball detection', frame)
+                # cv2.imshow('Ball detection', frame)
                 for (x,y,w,h) in balls:
                    cv2.rectangle(frame,(x,y),(x+w,y+h),(0,0,255),2)
                    font = cv2.FONT_HERSHEY_DUPLEX
@@ -255,8 +343,8 @@ while True:
                   font = cv2.FONT_HERSHEY_DUPLEX
                   cv2.putText(frame, 'Person', (x + 6, y - 6), font, 0.5, (0, 255, 0), 1)
                 #Display frames in a window
-                cv2.imshow('Ball detection', frame)
-                imgbytes = cv2.imencode('.png', frame)[1].tobytes() 
+                # cv2.imshow('Ball detection', frame)
+                imgbytes = cv2.imencode('.png', frame)[1].tobytes()
                 window['mp_image'].update(data=imgbytes)
 
 window.close()
