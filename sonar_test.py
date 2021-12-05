@@ -11,24 +11,27 @@ GPIO_ECHO = 23
 #set GPIO direction (IN / OUT)
 GPIO.setup(GPIO_TRIGGER, GPIO.OUT)
 GPIO.setup(GPIO_ECHO, GPIO.IN)
- 
+maxTime = 0.04
+   
 def distance():
     # set Trigger to HIGH
-    GPIO.output(GPIO_TRIGGER, True)
- 
+    GPIO.output(GPIO_TRIGGER,False)
     # set Trigger after 0.01ms to LOW
-    time.sleep(0.00001)
-    GPIO.output(GPIO_TRIGGER, False)
- 
-    StartTime = time.time()
-    StopTime = time.time()
- 
+    time.sleep(0.01)
+    GPIO.output(GPIO_TRIGGER, True)
+    time.sleep(0.0001)
+    GPIO.output(GPIO_TRIGGER,False)
+    
     # save StartTime
-    while GPIO.input(GPIO_ECHO) == 0:
+    StartTime = time.time()
+    timeout = StartTime + maxTime
+    while GPIO.input(GPIO_ECHO) == 0 and StartTime < timeout:
         StartTime = time.time()
  
     # save time of arrival
-    while GPIO.input(GPIO_ECHO) == 1:
+    StopTime = time.time()
+    timeout = StopTime + maxTime
+    while GPIO.input(GPIO_ECHO) == 1 and StopTime < timeout:
         StopTime = time.time()
  
     # time difference between start and arrival
@@ -40,15 +43,22 @@ def distance():
     return distance
 
 def confirm_shot(d):
-    if d <= 35:
-        return True
-    else:
-        return False
+    if d <= 10:
+        return "Shot made"
 
-
-# while True:
-#     dist = distance()
-#     if confirm_shot(dist) == True:
-#         print("Shot hit")
-#     print ("Measured Distance = %.1f cm" % dist)
- 
+count = 0
+made_count = 0
+shot_made_count = 0
+while True:
+    dist = distance()
+    a = confirm_shot(dist)
+    if a == 'Shot made':
+        shot_made_count += 1
+        if shot_made_count == 1:
+            count += 1
+    elif shot_made_count > 0 and a != 'Shot made':
+        shot_made_count += 1
+    if shot_made_count == 15:
+        shot_made_count = 0
+    print('Shots made: ', count)
+        
