@@ -2,6 +2,19 @@
 import numpy as np
 import cv2
 import imutils
+from functools import cmp_to_key
+from math import floor
+
+frame_buffer_size = 10 # number of frames to keep in buffer
+frames_threshold = .5 # percent of frames that need to meet criteria
+min_frames = floor(frame_buffer_size * frames_threshold)
+
+min_radii_away = 10
+
+x_ind = 0
+y_ind = 1
+w_ind = 2
+h_ind = 3
 
 # Malisiewicz et al.
 def non_max_suppression_fast(boxes, overlapThresh):
@@ -54,7 +67,7 @@ def find_persons(frame):
     HOGCV = cv2.HOGDescriptor()
     HOGCV.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
     # persons, weights =  HOGCV.detectMultiScale(frame, winStride = (4, 4), padding = (8, 8), scale = 1.03)
-    persons, weights =  HOGCV.detectMultiScale(frame, winStride = (12, 12), padding = (8, 8), scale = 1.075)
+    persons, weights =  HOGCV.detectMultiScale(frame, winStride = (6, 6), padding = (8, 8), scale = 1.075)
     # print(pedestrians)
     # print(weights)
 
@@ -74,7 +87,6 @@ class Ball:
         self.x = x
         self.y = y
         self.radius = radius
-
 
 def find_ball(frame):
     orangeLower = (7, 141, 80)
@@ -115,21 +127,74 @@ def draw_ball(frame, ball):
         cv2.circle(frame, (int(ball.x), int(ball.y)), int(ball.radius),
             (0, 255, 255), 2)
 
-def calibrate_height(persons_frames):
+def find_motionless_person(persons_frames):
     def compare_persons(a, b):
-        if a[2] * a[3] > b[2] * b[3]:
-            return -1
-        elif a[2] * a[3] < b[2] * b[3]:
-            return 1
-        else:
-            return 0
-    if len(persons_frames) > 5:
-        flat_list = [item for sublist in persons_frames for item in sublist]
-        if len(flat_list) > 5:
-            print(flat_list)
-            flat_list.sort(key=compare_persons)
+        return b[w_ind] * b[h_ind] - a[w_ind] * a[h_ind]
 
-    return False, 462
+    area_percent_threshold = .8
+    distance_threshold = 100
+
+    if len(persons_frames) > min_frames:
+        flat_list = [item for sublist in persons_frames for item in sublist]
+        if len(flat_list) > min_frames:
+            flat_list.sort(key=cmp_to_key(compare_persons))
+            # print(flat_list)
+            first_person = flat_list[0]
+            base_area = first_person[w_ind] * first_person[h_ind]
+            base_x = first_person[x_ind]
+            base_y = first_person[y_ind]
+
+            for i in range(1, min_frames):
+                person = flat_list[i]
+                percent_of_base_area = person[w_ind] * person[h_ind] / base_area
+                distance_from_base = ((person[x_ind] - base_x)**2 + (person[y_ind] - base_y)**2)**.5
+                if percent_of_base_area < area_percent_threshold or distance_from_base > distance_threshold:
+                    return None
+
+            # print('Found a person ready to shoot')
+            med_ind = floor(frame_buffer_size / 4)
+            # return flat_list[med_ind]
+            # return flat_list[0][3], flat_list[0][0], flat_list[0][2]
+            return flat_list[med_ind]
+
+    return None
+
+def check_holding_ball(ball, person):
+    if ball is None:
+        return False, None
+    else:
+        x_in_range = person[x_ind] <= ball.x <= person[x_ind] + person[w_ind]
+        y_in_range = person[y_ind] <= ball.y <= person[y_ind] + person[h_ind]
+        if x_in_range and y_in_range:
+            print('person is holding ball')
+            return True, ball
+        else:
+            return False, None
+
+def shot_taken(b_frames, held_ball, person):
+    # print('in shot taken')
+    # remove values that are None
+    b_frames = [frame for frame in b_frames if frame is not None]
+
+    if len(b_frames) < min_frames:
+        return False
+    else:
+        # print('in else in shot taken')
+        # is there a frame in which the ball is over the persons head
+        ball_overhead = False
+        # is there a frame in which the ball is the minimum distance away from where it started (in the y direction)
+        ball_min_distance_away = False
+
+        for ball in b_frames:
+            if person[x_ind] <= ball.x <= person[x_ind] + person[w_ind] and ball.y < person[y_ind]:
+                # print('ball overhead')
+                ball_overhead = True
+            if held_ball.y - ball.y > held_ball.radius * min_radii_away:
+                # print('ball min distance')
+                ball_min_distance_away = True
+            if ball_overhead and ball_min_distance_away:
+                return True
+        return False
 
 def resize_frame(frame, percent):
     width = int(frame.shape[1] * percent / 100)
