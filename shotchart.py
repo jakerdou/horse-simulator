@@ -3,6 +3,7 @@ Dimensions are changed to fit our design needs'''
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 def court(axes):
     axes.plot([-220, -220], [330, 470], linewidth=2, color='black')
@@ -29,3 +30,20 @@ def miss(axes, x, y):
 # axes = fig.add_axes([0, 0, 1, 1])
 # court(axes)
 # plt.show()
+
+# shooting analysis chart
+fig = plt.figure(figsize=(5, 4.5))
+axes = fig.add_axes([0, 0, 1, 1])
+# draw/delete shooting chart
+def draw_figure(canvas, figure):
+    figure_canvas_agg = FigureCanvasTkAgg(figure, canvas)
+    figure_canvas_agg.get_tk_widget().pack(side='top', fill='both', expand=1)
+    return figure_canvas_agg
+def delete_figure_agg(figure_agg):
+    figure_agg.get_tk_widget().forget()
+#update the chart with misses and makes
+def chart_update(x, y, m):
+    if m == 1:
+        make(axes, x, y)
+    else:
+        miss(axes, x, y)
