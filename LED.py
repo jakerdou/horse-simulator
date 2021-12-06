@@ -26,4 +26,3 @@ def off():
     GPIO.output(red, 1)
     GPIO.output(green, 1)
     
-off()

@@ -43,14 +43,14 @@ def get_sonar_distance():
     return distance
 
 def confirm_shot(d):
-    if d <= 10:
+    if d <= 5:
         return "Shot made"
 
-def listen_for_shot:
+def listen_for_shot():
     # TODO: put in GUI
     print('Shoot!\nYou have 5 seconds before the system will reset and you can shoot again')
 
-    start = perf_counter()
+    start = time.perf_counter()
     distance_frames = []
 
     seconds = 1
@@ -59,8 +59,14 @@ def listen_for_shot:
             print(str(seconds), ', ')
             seconds += 1
         distance_frames.append(get_sonar_distance())
+    print('# of measurements <= 10 ' + str(len([d for d in distance_frames if d <= 10])))
+    print('# of measurements <= 9 ' + str(len([d for d in distance_frames if d <= 9])))
+    print('# of measurements <= 8 ' + str(len([d for d in distance_frames if d <= 8])))
+    print('# of measurements <= 7 ' + str(len([d for d in distance_frames if d <= 7])))
+    print('# of measurements <= 6 ' + str(len([d for d in distance_frames if d <= 6])))
+    print('# of measurements <= 5 ' + str(len([d for d in distance_frames if d <= 5])))
 
-    if len([d for d in distance_frames if d <= 10]) > 0:
+    if len([d for d in distance_frames if d <= 5]) > 0:
         print('Shot made')
         return True
     else:
@@ -81,4 +87,5 @@ def listen_for_shot:
 #         shot_made_count += 1
 #     if shot_made_count == 15:
 #         shot_made_count = 0
-#     print('Shots made: ', count)
+#     #print('Shots made: ', count)
+#     print(dist)

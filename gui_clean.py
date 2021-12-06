@@ -10,8 +10,8 @@ from shotchart import *
 from shot_generator import *
 from image_helpers import *
 from layout import *
-# from sonar_helpers import *
-# from LED import *
+from sonar_helpers import *
+from LED import *
 
 # 181 inches from free throw line to basket
 dist_ftl_to_basket = 181
@@ -110,6 +110,7 @@ while True:
                 _, frame = cap.read()
 
                 # 1. Find motionless person in frames
+                yellow_light()
                 if not person_ready_for_shot:
                     person = find_motionless_person(p_frames, frame)
 
@@ -127,6 +128,7 @@ while True:
 
                 elif person_ready_for_shot:
                     # 4. See if person is holding ball up in a position to shoot
+                    green_light()
                     ball_ready, held_ball = check_holding_ball(frame, person)
 
                     if ball_ready:

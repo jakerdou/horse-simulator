@@ -96,8 +96,10 @@ def find_ball(frame):
     # orangeUpper = (15, 206, 206)
 
 	# small ball
-    orangeLower = (0, 81, 80)
-    orangeUpper = (10, 170, 152)
+#     orangeLower = (0, 81, 80)
+#     orangeUpper = (10, 170, 152)
+    orangeLower = (0, 74, 51)
+    orangeUpper = (14, 173, 110)
 
     blurred = cv2.GaussianBlur(frame, (11, 11), 0)
     hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
