@@ -4,12 +4,14 @@ import cv2
 import imutils
 from functools import cmp_to_key
 from math import floor
+from time import sleep
 
 frame_buffer_size = 10 # number of frames to keep in buffer
 frames_threshold = .5 # percent of frames that need to meet criteria
 min_frames = floor(frame_buffer_size * frames_threshold)
 
 min_radii_away = 10
+ball_hold_threshold = .125
 
 x_ind = 0
 y_ind = 1
@@ -67,7 +69,7 @@ def find_persons(frame):
     HOGCV = cv2.HOGDescriptor()
     HOGCV.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
     # persons, weights =  HOGCV.detectMultiScale(frame, winStride = (4, 4), padding = (8, 8), scale = 1.03)
-    persons, weights =  HOGCV.detectMultiScale(frame, winStride = (6, 6), padding = (8, 8), scale = 1.075)
+    persons, weights =  HOGCV.detectMultiScale(frame, winStride = (6, 6), padding = (8, 8), scale = 1.1)
     # print(pedestrians)
     # print(weights)
 
@@ -89,8 +91,13 @@ class Ball:
         self.radius = radius
 
 def find_ball(frame):
-    orangeLower = (7, 141, 80)
-    orangeUpper = (15, 206, 206)
+	# big ball
+    # orangeLower = (7, 141, 80)
+    # orangeUpper = (15, 206, 206)
+
+	# small ball
+    orangeLower = (0, 81, 80)
+    orangeUpper = (10, 170, 152)
 
     blurred = cv2.GaussianBlur(frame, (11, 11), 0)
     hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
@@ -127,49 +134,83 @@ def draw_ball(frame, ball):
         cv2.circle(frame, (int(ball.x), int(ball.y)), int(ball.radius),
             (0, 255, 255), 2)
 
-def find_motionless_person(persons_frames):
-    def compare_persons(a, b):
-        return b[w_ind] * b[h_ind] - a[w_ind] * a[h_ind]
+def find_motionless_person(p_frames, frame):
 
-    area_percent_threshold = .8
-    distance_threshold = 100
+	# find and draw people on frame
+	persons = find_persons(frame)
+	draw_persons(frame, persons)
 
-    if len(persons_frames) > min_frames:
-        flat_list = [item for sublist in persons_frames for item in sublist]
-        if len(flat_list) > min_frames:
-            flat_list.sort(key=cmp_to_key(compare_persons))
-            # print(flat_list)
-            first_person = flat_list[0]
-            base_area = first_person[w_ind] * first_person[h_ind]
-            base_x = first_person[x_ind]
-            base_y = first_person[y_ind]
+	# add frame to buffer
+	if len(p_frames) < frame_buffer_size:
+		p_frames.append(persons)
+	else:
+		del p_frames[0]
+		p_frames.append(persons)
 
-            for i in range(1, min_frames):
-                person = flat_list[i]
-                percent_of_base_area = person[w_ind] * person[h_ind] / base_area
-                distance_from_base = ((person[x_ind] - base_x)**2 + (person[y_ind] - base_y)**2)**.5
-                if percent_of_base_area < area_percent_threshold or distance_from_base > distance_threshold:
-                    return None
+	# look through frames for motionless person
+	def compare_persons(a, b):
+		return b[w_ind] * b[h_ind] - a[w_ind] * a[h_ind]
 
-            # print('Found a person ready to shoot')
-            med_ind = floor(frame_buffer_size / 4)
-            # return flat_list[med_ind]
-            # return flat_list[0][3], flat_list[0][0], flat_list[0][2]
-            return flat_list[med_ind]
+	area_percent_threshold = .8
+	distance_threshold = 100
 
-    return None
+	if len(p_frames) > min_frames:
+	    flat_list = [item for sublist in p_frames for item in sublist]
+	    if len(flat_list) > min_frames:
+	        flat_list.sort(key=cmp_to_key(compare_persons))
+	        # print(flat_list)
+	        first_person = flat_list[0]
+	        base_area = first_person[w_ind] * first_person[h_ind]
+	        base_x = first_person[x_ind]
+	        base_y = first_person[y_ind]
 
-def check_holding_ball(ball, person):
-    if ball is None:
-        return False, None
-    else:
-        x_in_range = person[x_ind] <= ball.x <= person[x_ind] + person[w_ind]
-        y_in_range = person[y_ind] <= ball.y <= person[y_ind] + person[h_ind]
-        if x_in_range and y_in_range:
-            print('person is holding ball')
-            return True, ball
-        else:
-            return False, None
+	        for i in range(1, min_frames):
+	            person = flat_list[i]
+	            percent_of_base_area = person[w_ind] * person[h_ind] / base_area
+	            distance_from_base = ((person[x_ind] - base_x)**2 + (person[y_ind] - base_y)**2)**.5
+	            if percent_of_base_area < area_percent_threshold or distance_from_base > distance_threshold:
+	                return None
+
+	        # print('Found a person ready to shoot')
+	        med_ind = floor(frame_buffer_size / 4)
+	        # return flat_list[med_ind]
+	        # return flat_list[0][3], flat_list[0][0], flat_list[0][2]
+	        return flat_list[med_ind]
+
+	return None
+
+def get_focal_length(base_height_pixels, dist_to_basket, height_inches):
+	# TODO: put in GUI
+	print('Height calibrated, get in position')
+	for i in range(3):
+		print(str(3 - i), end=', ')
+		sleep(1)
+	print()
+
+	return (base_height_pixels * dist_to_basket) / height_inches
+
+def get_person_distance(focal_length, height_inches, height_pixels):
+	distance_inches = (focal_length * height_inches) / height_pixels
+
+	# TODO: put in GUI
+	print('You are ' + str(distance_inches)[0:6] + ' inches away, hold the ball at about eye level...')
+
+	return distance_inches
+
+def check_holding_ball(frame, person):
+	ball = find_ball(frame)
+	draw_ball(frame, ball)
+	draw_persons(frame, [person])
+
+	if ball is None:
+	    return False, None
+	else:
+	    x_in_range = person[x_ind] <= ball.x <= person[x_ind] + person[w_ind]
+	    y_in_range = person[y_ind] <= ball.y <= person[y_ind] + person[h_ind] * ball_hold_threshold
+	    if x_in_range and y_in_range:
+	        return True, ball
+	    else:
+	        return False, None
 
 def shot_taken(b_frames, held_ball, person):
     # print('in shot taken')

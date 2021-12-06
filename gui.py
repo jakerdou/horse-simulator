@@ -10,7 +10,7 @@ from shotchart import *
 from shot_generator import *
 from image_helpers import *
 from layout import *
-# from sonar_test import *
+# from sonar_helpers import *
 # from LED import *
 
 # 181 inches from free throw line to basket
@@ -47,7 +47,7 @@ while True:
     event, values = window.read()
     if event == sg.WIN_CLOSED: # if user closes window or clicks cancel
         break
-    print(event)
+    # print(event)
 
     if mode == 'menu':
         if event == 'Shootaround':
@@ -86,19 +86,21 @@ while True:
 
             cap = cv2.VideoCapture(0)
             # sleep(2)
-            if cap.isOpened():
+            if not cap.isOpened():
                 # person_cascade = cv2.CascadeClassifier('./haarcascade_fullbody.xml')
                 # ball_cascade = cv2.CascadeClassifier('./ball_cascade.xml')
-                print('start')
+                # print('start')
+                print('capture failed to open')
 
             height_calibrated = False
             person_ready_for_shot = False
-            person_holding_ball = False
+            # person_holding_ball = False
+            ball_ready = False
             focal_length = None
             distance = None
             held_ball = None
             p_frames = []
-            b_frames = []
+            # b_frames = []
 
             # num_frames = 0
             while event != 'Finished':
@@ -120,64 +122,84 @@ while True:
                 # if player is not detected, LED -> red light
 
                 if not person_ready_for_shot:
-                    persons = find_persons(frame)
-                    draw_persons(frame, persons)
+                    # persons = find_persons(frame)
+                    # draw_persons(frame, persons)
+                    #
+                    # if len(p_frames) < frame_buffer_size:
+                    #     p_frames.append(persons)
+                    # else:
+                    #     del p_frames[0]
+                    #     p_frames.append(persons)
 
-
-                    if len(p_frames) < frame_buffer_size:
-                        p_frames.append(persons)
-                    else:
-                        del p_frames[0]
-                        p_frames.append(persons)
-
-                    person = find_motionless_person(p_frames)
+                    person = find_motionless_person(p_frames, frame)
                     # print(person)
 
+                    # if we found a motionless person in the buffer of frames
                     if person is not None:
                         if not height_calibrated:
-                            base_height_pixels = person[h_ind]
-                            focal_length = focal_length = (base_height_pixels * dist_ftl_to_basket) / height_inches
-                            # distance = some calculation
+                            focal_length = get_focal_length(person[h_ind], dist_ftl_to_basket, height_inches)
                             height_calibrated = True
-
-                            # TODO: put in GUI
-                            print('Height calibrated, get in position')
-                            for i in range(3):
-                                print(str(3 - i))
-                                sleep(1)
-                        else:
-                            distance_inches = (focal_length * height_inches) / person[h_ind]
+                        elif height_calibrated:
+                            distance_inches = get_person_distance(focal_length, height_inches, person[h_ind])
                             person_ready_for_shot = True
+                elif person_ready_for_shot:
+                    # ball = find_ball(frame)
+                    # draw_ball(frame, ball)
+                    # draw_persons(frame, [person])
 
-                            # TODO: put in GUI
-                            print('You are ' + str(distance_inches) + ' inches away, do not move before you shoot...')
-                else:
-                    ball = find_ball(frame)
-                    draw_ball(frame, ball)
-                    draw_persons(frame, [person])
+                    ball_ready, held_ball = check_holding_ball(ball, person)
 
-                    if not person_holding_ball:
-                        person_holding_ball, held_ball = check_holding_ball(ball, person)
-                    else:
-                        # print('in else')
-                        if len(b_frames) < frame_buffer_size:
-                            b_frames.append(ball)
-                        else:
-                            del b_frames[0]
-                            b_frames.append(ball)
+                    if ball_ready:
+                        print('Shoot!\nYou have 5 seconds before the system will reset and you can shoot again')
+                        # start = perf_counter()
+                        #     distance_frames = []
+                        #
+                        #     seconds = 1
+                        #     while perf_counter() - start < 5:
+                        #         if seconds * .95 < perf_counter() - start < seconds * 1.05:
+                        #             print(str(seconds), ', ')
+                        #             seconds += 1
+                        #         distance_frames.append(get_sonar_distance())
+                        #
+                        #     if len([d for d in distance_frames if d <= 10]) > 0:
+                        #         print('Shot made')
+                        #     else:
+                        #         print('Shot missed')
+                        shot_made = listen_for_shot()
 
-                        if shot_taken(b_frames, held_ball, person):
-                            # TODO: put in GUI
-                            print('Shot Taken!\Get in position again')
-                            for i in range(3):
-                                print(str(3 - i))
-                                sleep(1)
-                            person_ready_for_shot = False
-                            person_holding_ball = False
-                            distance = None
-                            held_ball = None
-                            p_frames = []
-                            b_frames = []
+                        for i in range(5):
+                            print(str(5 - i), end=', ' if i < 4 else '\n')
+                            sleep(1)
+
+                        person_ready_for_shot = False
+                        person_holding_ball = False
+                        distance = None
+                        held_ball = None
+                        p_frames = []
+                        # b_frames = []
+
+                    # if not person_holding_ball:
+                    #     person_holding_ball, held_ball = check_holding_ball(ball, person)
+                    # else:
+                    #     # print('in else')
+                    #     if len(b_frames) < frame_buffer_size:
+                    #         b_frames.append(ball)
+                    #     else:
+                    #         del b_frames[0]
+                    #         b_frames.append(ball)
+                    #
+                    #     if shot_taken(b_frames, held_ball, person):
+                    #         # TODO: put in GUI
+                    #         print('Shot Taken!\nGet in position again')
+                    #         for i in range(3):
+                    #             print(str(3 - i))
+                    #             sleep(1)
+                    #         person_ready_for_shot = False
+                    #         person_holding_ball = False
+                    #         distance = None
+                    #         held_ball = None
+                    #         p_frames = []
+                    #         b_frames = []
 
                 imgbytes = resize_frame(frame, 130)
                 window['image'].update(data=imgbytes)
@@ -247,7 +269,7 @@ while True:
             while event != 'Finished5':
                 # camera code
                 event, values = window.read(timeout=20)
-                print(event)
+                # print(event)
                 # when calibration is done, instruction changes
                 if event == 'a:38':
                     distance = distance_selector()
@@ -359,7 +381,7 @@ while True:
             while event != 'Finished5':
                 # camera code
                 event, values = window.read(timeout=20)
-                print(event)
+                # print(event)
                 # when calibration is done, instruction changes
                 if event == 'a:38':
                     distance = distance_selector()
