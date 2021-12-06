@@ -13,7 +13,7 @@ GPIO.setup(GPIO_TRIGGER, GPIO.OUT)
 GPIO.setup(GPIO_ECHO, GPIO.IN)
 maxTime = 0.04
    
-def distance():
+def get_sonar_distance():
     # set Trigger to HIGH
     GPIO.output(GPIO_TRIGGER,False)
     # set Trigger after 0.01ms to LOW
@@ -50,7 +50,7 @@ count = 0
 made_count = 0
 shot_made_count = 0
 while True:
-    dist = distance()
+    dist = get_sonar_distance()
     a = confirm_shot(dist)
     if a == 'Shot made':
         shot_made_count += 1
@@ -60,5 +60,6 @@ while True:
         shot_made_count += 1
     if shot_made_count == 15:
         shot_made_count = 0
-    print('Shots made: ', count)
+    #print('Shots made: ', count)
+    print(dist)
         

@@ -2,7 +2,7 @@ import PySimpleGUI as sg
 import numpy as np
 import imutils
 from collections import deque
-from time import sleep
+from time import sleep, perf_counter
 from matplotlib.ticker import NullFormatter
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
@@ -10,10 +10,11 @@ from shotchart import *
 from shot_generator import *
 from image_helpers import *
 from layout import *
-# from sonar_test import *
+from sonar_test import *
 # from LED import *
 
-frames_size = 10
+# 181 inches from free throw line to basket
+dist_ftl_to_basket = 181
 
 # Create the Window
 window = sg.Window('HORSE Simulator', layout, location=(100, 100), return_keyboard_events=True)
@@ -86,12 +87,18 @@ while True:
             cap = cv2.VideoCapture(0)
             # sleep(2)
             if cap.isOpened():
-                person_cascade = cv2.CascadeClassifier('./haarcascade_fullbody.xml')
-                ball_cascade = cv2.CascadeClassifier('./ball_cascade.xml')
+                # person_cascade = cv2.CascadeClassifier('./haarcascade_fullbody.xml')
+                # ball_cascade = cv2.CascadeClassifier('./ball_cascade.xml')
                 print('start')
 
-            persons_frames = []
             height_calibrated = False
+            person_ready_for_shot = False
+            person_holding_ball = False
+            focal_length = None
+            distance = None
+            held_ball = None
+            p_frames = []
+            b_frames = []
 
             # num_frames = 0
             while event != 'Finished':
@@ -105,26 +112,87 @@ while True:
                 if (event == 'a:38'):
                     window['sa_instruction'].update('Shoot the ball from any spot within the focus of the system. The LED will turn red if the system can not detect you.')
 
-                ret, frame = cap.read()
+                # frame is 480 x 640
+                _, frame = cap.read()
+                # print(str(frame.shape))
 
                 # while system is in calibration mode -> yellow light
                 # if player is not detected, LED -> red light
 
-                persons = find_persons(frame)
-                draw_persons(frame, persons)
+                if not person_ready_for_shot:
+                    persons = find_persons(frame)
+                    draw_persons(frame, persons)
 
-                if len(persons_frames) < frames_size:
-                    persons_frames.append(persons)
+
+                    if len(p_frames) < frame_buffer_size:
+                        p_frames.append(persons)
+                    else:
+                        del p_frames[0]
+                        p_frames.append(persons)
+
+                    person = find_motionless_person(p_frames)
+                    # print(person)
+
+                    if person is not None:
+                        if not height_calibrated:
+                            base_height_pixels = person[h_ind]
+                            focal_length = focal_length = (base_height_pixels * dist_ftl_to_basket) / height_inches
+                            # distance = some calculation
+                            height_calibrated = True
+
+                            # TODO: put in GUI
+                            print('Height calibrated, get in position')
+                            for i in range(3):
+                                print(str(3 - i))
+                                sleep(1)
+                        else:
+                            distance_inches = (focal_length * height_inches) / person[h_ind]
+                            person[h_ind] = floor(.5 * person[h_ind])
+                            person[y_ind] = person[y_ind] + person[h_ind]
+                            person_ready_for_shot = True
+
+                            # TODO: put in GUI
+                            print('You are ' + str(distance_inches) + ' inches away, do not move before you shoot...')
                 else:
-                    del persons_frames[0]
-                    persons_frames.append(persons)
+                    ball = find_ball(frame)
+                    draw_ball(frame, ball)
+                    draw_persons(frame, [person])
 
-                # height_calibrated, height_pixels = calibrate_height(persons_frames)
+                    if not person_holding_ball:
+                        person_holding_ball, held_ball = check_holding_ball(ball, person)
+                    else:
+                        # print('in else')
+                        if len(b_frames) < frame_buffer_size:
+                            b_frames.append(ball)
+                        else:
+                            del b_frames[0]
+                            b_frames.append(ball)
 
-                ball = find_ball(frame)
-                draw_ball(frame, ball)
+                        if shot_taken(b_frames, held_ball, person):
+                            
+                            start = perf_counter()
+                            distance_frames = []
+                            while perf_counter() - start < 3:
+                                distance_frames.append(get_sonar_distance())
+                            
+                            if len([d for d in distance_frames if d <= 10]) > 0:
+                                print('Shot made')
+                            else:
+                                print('Shot missed')
+                            
+                            # TODO: put in GUI
+                            print('Shot Taken!\Get in position again')
+                            for i in range(3):
+                                print(str(3 - i))
+                                sleep(1)
+                            person_ready_for_shot = False
+                            person_holding_ball = False
+                            distance = None
+                            held_ball = None
+                            p_frames = []
+                            b_frames = []
 
-                imgbytes = resize_frame(frame, 130)
+                imgbytes = resize_frame(frame, 100)
                 window['image'].update(data=imgbytes)
 
                 # update shot chart with makes/misses
@@ -252,7 +320,7 @@ while True:
     #                 sonic = 1
 
             # made shots, shots attempted, three point makes , three point attempts
-            # analysis_update(23, 45, 18, 30)
+            analysis_update(23, 45, 18, 30)
 
         #cancel and go back to menu page
         if event == 'Cancel1':
