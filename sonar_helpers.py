@@ -1,6 +1,8 @@
 import RPi.GPIO as GPIO
 import time
 
+from constants import *
+
 #GPIO Mode (BOARD / BCM)
 GPIO.setmode(GPIO.BCM)
 
@@ -54,19 +56,20 @@ def listen_for_shot():
     distance_frames = []
 
     seconds = 1
-    while time.perf_counter() - start < 5:
-        if seconds * .95 < time.perf_counter() - start < seconds * 1.05:
-            print(str(seconds), ', ')
+    while time.perf_counter() - start < wait_secs + 2:
+        if seconds * .95 < time.perf_counter() - start < seconds * 1.05 and time.perf_counter() - start < wait_secs:
+            # TODO: put in GUI
+            print(str(wait_secs - seconds), end=', ')
             seconds += 1
         distance_frames.append(get_sonar_distance())
-    print('# of measurements <= 10 ' + str(len([d for d in distance_frames if d <= 10])))
-    print('# of measurements <= 9 ' + str(len([d for d in distance_frames if d <= 9])))
-    print('# of measurements <= 8 ' + str(len([d for d in distance_frames if d <= 8])))
-    print('# of measurements <= 7 ' + str(len([d for d in distance_frames if d <= 7])))
-    print('# of measurements <= 6 ' + str(len([d for d in distance_frames if d <= 6])))
-    print('# of measurements <= 5 ' + str(len([d for d in distance_frames if d <= 5])))
+    # print('# of measurements <= 10 ' + str(len([d for d in distance_frames if d <= 10])))
+    # print('# of measurements <= 9 ' + str(len([d for d in distance_frames if d <= 9])))
+    # print('# of measurements <= 8 ' + str(len([d for d in distance_frames if d <= 8])))
+    # print('# of measurements <= 7 ' + str(len([d for d in distance_frames if d <= 7])))
+    # print('# of measurements <= 6 ' + str(len([d for d in distance_frames if d <= 6])))
+    # print('# of measurements <= 5 ' + str(len([d for d in distance_frames if d <= 5])))
 
-    if len([d for d in distance_frames if d <= 5]) > 0:
+    if len([d for d in distance_frames if d <= 10]) >= 30:
         print('Shot made')
         return True
     else:

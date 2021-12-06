@@ -6,17 +6,7 @@ from functools import cmp_to_key
 from math import floor
 from time import sleep
 
-frame_buffer_size = 10 # number of frames to keep in buffer
-frames_threshold = .5 # percent of frames that need to meet criteria
-min_frames = floor(frame_buffer_size * frames_threshold)
-
-min_radii_away = 10
-ball_hold_threshold = .125
-
-x_ind = 0
-y_ind = 1
-w_ind = 2
-h_ind = 3
+from constants import *
 
 # Malisiewicz et al.
 def non_max_suppression_fast(boxes, overlapThresh):
@@ -184,10 +174,10 @@ def find_motionless_person(p_frames, frame):
 def get_focal_length(base_height_pixels, dist_to_basket, height_inches):
 	# TODO: put in GUI
 	print('Height calibrated, get in position')
-	for i in range(3):
-		print(str(3 - i), end=', ')
-		sleep(1)
-	print()
+	# for i in range(wait_secs):
+	# 	print(str(wait_secs - i), end=', ')
+	# 	sleep(1)
+	# print()
 
 	return (base_height_pixels * dist_to_basket) / height_inches
 

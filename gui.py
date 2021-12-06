@@ -12,12 +12,13 @@ from image_helpers import *
 from layout import *
 # from sonar_helpers import *
 # from LED import *
+from constants import *
 
 # 181 inches from free throw line to basket
-dist_ftl_to_basket = 181
+dist_ftl_to_basket = 60
 
 # Create the Window
-window = sg.Window('HORSE Simulator', layout, location=(100, 100), return_keyboard_events=True)
+window = sg.Window('HORSE Simulator', layout, location=(0, 0), return_keyboard_events=True)
 # Event Loop to process "events" and get the "values" of the inputs
 mode = 'menu'
 
@@ -75,37 +76,38 @@ while True:
             window['shootaround'].update(visible=False)
             window['camera'].update(visible=True)
 
-            sonic = 0
-            cam = 0
+            # sonic = 0
+            # cam = 0
             makes = 0
             misses = 0
             three_makes = 0
             three_misses = 0
-            x = 0
-            y = 0
+            # x = 0
+            # y = 0
 
             cap = cv2.VideoCapture(0)
             # sleep(2)
             if not cap.isOpened():
-                # person_cascade = cv2.CascadeClassifier('./haarcascade_fullbody.xml')
-                # ball_cascade = cv2.CascadeClassifier('./ball_cascade.xml')
-                # print('start')
                 print('capture failed to open')
 
+            waited_for_person_to_move = False
             height_calibrated = False
             person_ready_for_shot = False
-            # person_holding_ball = False
             ball_ready = False
             focal_length = None
             distance = None
             held_ball = None
             p_frames = []
-            # b_frames = []
 
-            # num_frames = 0
+
+            # TODO: put in GUI
+            print('stand ~5 feet away from the camera for height calibration')
+            for i in range(wait_secs):
+                print(str(wait_secs - i), end=', ')
+                sleep(1)
+            print()
+
             while event != 'Finished':
-                # num_frames += 1
-                # print(num_frames)
 
                 # camera code
                 event, values = window.read(timeout=20)
@@ -116,107 +118,53 @@ while True:
 
                 # frame is 480 x 640
                 _, frame = cap.read()
-                # print(str(frame.shape))
 
-                # while system is in calibration mode -> yellow light
-                # if player is not detected, LED -> red light
-
+                # yellow_light()
+                # 1. Find motionless person in frames
                 if not person_ready_for_shot:
-                    # persons = find_persons(frame)
-                    # draw_persons(frame, persons)
-                    #
-                    # if len(p_frames) < frame_buffer_size:
-                    #     p_frames.append(persons)
-                    # else:
-                    #     del p_frames[0]
-                    #     p_frames.append(persons)
+                    if height_calibrated and not waited_for_person_to_move:
+                        print('Move to the location you want to shoot the ball...')
+                        for i in range(wait_secs):
+                            print(str(wait_secs - i), end=', ')
+                            sleep(1)
+                        print()
+                        waited_for_person_to_move = True
 
                     person = find_motionless_person(p_frames, frame)
-                    # print(person)
 
-                    # if we found a motionless person in the buffer of frames
                     if person is not None:
+                        # 2. Upon finding motionless person first time, set focal length
                         if not height_calibrated:
                             focal_length = get_focal_length(person[h_ind], dist_ftl_to_basket, height_inches)
+
                             height_calibrated = True
+                        # 3. Second time, set distance and move on to seeing if ball is ready to be shot
                         elif height_calibrated:
                             distance_inches = get_person_distance(focal_length, height_inches, person[h_ind])
-                            person_ready_for_shot = True
-                elif person_ready_for_shot:
-                    # ball = find_ball(frame)
-                    # draw_ball(frame, ball)
-                    # draw_persons(frame, [person])
 
-                    ball_ready, held_ball = check_holding_ball(ball, person)
+                            person_ready_for_shot = True
+
+                elif person_ready_for_shot:
+                    # 4. See if person is holding ball up in a position to shoot
+                    # green_light()
+                    ball_ready, held_ball = check_holding_ball(frame, person)
 
                     if ball_ready:
-                        print('Shoot!\nYou have 5 seconds before the system will reset and you can shoot again')
-                        # start = perf_counter()
-                        #     distance_frames = []
-                        #
-                        #     seconds = 1
-                        #     while perf_counter() - start < 5:
-                        #         if seconds * .95 < perf_counter() - start < seconds * 1.05:
-                        #             print(str(seconds), ', ')
-                        #             seconds += 1
-                        #         distance_frames.append(get_sonar_distance())
-                        #
-                        #     if len([d for d in distance_frames if d <= 10]) > 0:
-                        #         print('Shot made')
-                        #     else:
-                        #         print('Shot missed')
-                        shot_made = listen_for_shot()
+                        # 5. Check sonar to see if the shot was made
+                        # shot_made = listen_for_shot()
+                        shot_made = True
+                        print('Shot made!')
 
-                        for i in range(5):
-                            print(str(5 - i), end=', ' if i < 4 else '\n')
-                            sleep(1)
-
+                        # 6. Reset values and start to look for motionless person again
+                        waited_for_person_to_move = False
                         person_ready_for_shot = False
                         person_holding_ball = False
                         distance = None
                         held_ball = None
                         p_frames = []
-                        # b_frames = []
-
-                    # if not person_holding_ball:
-                    #     person_holding_ball, held_ball = check_holding_ball(ball, person)
-                    # else:
-                    #     # print('in else')
-                    #     if len(b_frames) < frame_buffer_size:
-                    #         b_frames.append(ball)
-                    #     else:
-                    #         del b_frames[0]
-                    #         b_frames.append(ball)
-                    #
-                    #     if shot_taken(b_frames, held_ball, person):
-                    #         # TODO: put in GUI
-                    #         print('Shot Taken!\nGet in position again')
-                    #         for i in range(3):
-                    #             print(str(3 - i))
-                    #             sleep(1)
-                    #         person_ready_for_shot = False
-                    #         person_holding_ball = False
-                    #         distance = None
-                    #         held_ball = None
-                    #         p_frames = []
-                    #         b_frames = []
 
                 imgbytes = resize_frame(frame, 130)
                 window['image'].update(data=imgbytes)
-
-                # update shot chart with makes/misses
-                # also need to account fo three point makes/misses
-#                 if (cam == 1 and sonic == 1):
-#                     chart_update(x, y, 1)
-#                     makes += 1
-#                 else:
-#                     chart_update(x, y, 1)
-#                     misses += 1
-#
-    #        sonic sensor code
-    #             dist = distance()
-    #             if confirm_shot(dist) == True:
-    #                 sonic = 1
 
             # made shots, shots attempted, three point makes , three point attempts
             # analysis_update(23, 45, 18, 30)
