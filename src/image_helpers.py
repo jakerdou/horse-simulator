@@ -6,7 +6,7 @@ from functools import cmp_to_key
 from math import floor
 from time import sleep
 
-from constants import *
+from src.constants import *
 
 # Malisiewicz et al.
 def non_max_suppression_fast(boxes, overlapThresh):

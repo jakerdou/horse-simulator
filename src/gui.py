@@ -100,3 +100,6 @@ layout = [[
     sg.Column(singleplayer_scoreboard, key='singleplayer_scoreboard', visible=False),
     sg.Column(multiplayer_scoreboard, key='multiplayer_scoreboard', visible=False)
 ]]
+
+# Create the Window
+window = sg.Window('HORSE Simulator', layout, location=(0, 0), return_keyboard_events=True)
