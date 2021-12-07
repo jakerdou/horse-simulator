@@ -9,13 +9,11 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from shotchart import *
 from shot_generator import *
 from image_helpers import *
+from game_helpers import *
 from layout import *
 # from sonar_helpers import *
 # from LED import *
 from constants import *
-
-# 181 inches from free throw line to basket
-dist_ftl_to_basket = 60
 
 # Create the Window
 window = sg.Window('HORSE Simulator', layout, location=(0, 0), return_keyboard_events=True)
@@ -92,13 +90,12 @@ while True:
 
             waited_for_person_to_move = False
             height_calibrated = False
-            person_ready_for_shot = False
+            ready_for_shot = False
             ball_ready = False
             focal_length = None
             distance = None
             held_ball = None
             p_frames = []
-
 
             # TODO: put in GUI
             print('stand ~5 feet away from the camera for height calibration')
@@ -121,7 +118,7 @@ while True:
 
                 # yellow_light()
                 # 1. Find motionless person in frames
-                if not person_ready_for_shot:
+                if not ready_for_shot:
                     if height_calibrated and not waited_for_person_to_move:
                         print('Move to the location you want to shoot the ball...')
                         for i in range(wait_secs):
@@ -136,16 +133,16 @@ while True:
                     if person is not None:
                         # 2. Upon finding motionless person first time, set focal length
                         if not height_calibrated:
-                            focal_length = get_focal_length(person[h_ind], dist_ftl_to_basket, height_inches)
+                            focal_length = get_focal_length(person[h_ind], dist_5ft_to_basket, height_inches)
 
                             height_calibrated = True
                         # 3. Second time, set distance and move on to seeing if ball is ready to be shot
                         elif height_calibrated:
                             distance_inches = get_person_distance(focal_length, height_inches, person[h_ind])
 
-                            person_ready_for_shot = True
+                            ready_for_shot = True
 
-                elif person_ready_for_shot:
+                elif ready_for_shot:
                     # 4. See if person is holding ball up in a position to shoot
                     # green_light()
                     ball_ready, held_ball = check_holding_ball(frame, person)
@@ -158,7 +155,7 @@ while True:
 
                         # 6. Reset values and start to look for motionless person again
                         waited_for_person_to_move = False
-                        person_ready_for_shot = False
+                        ready_for_shot = False
                         person_holding_ball = False
                         distance = None
                         held_ball = None
@@ -323,11 +320,32 @@ while True:
             mp2_makes = 0
             mp2_misses = 0
 
+            num_players = 2
+            players = []
+            for i in range(num_players):
+                player = {
+                    'id': i + 1,
+                    'focal_length': None,
+                    'misses': 0,
+                    # TODO: get this to change based on input
+                    'height_inches': 60,
+                    'distance_inches': 0,
+                    'required_distance': 0,
+                    'person': None, # an instance of object person that indicates where they will shoot from
+                    'p_frames': [],
+                    'ready_for_shot': False,
+                    'waited_for_person_to_move': False,
+                    'taking_turn': True
+                }
+                players.append(player)
+
             cap = cv2.VideoCapture(0)
-            if cap.isOpened():
-                person_cascade = cv2.CascadeClassifier('./haarcascade_fullbody.xml')
-                ball_cascade = cv2.CascadeClassifier('./ball_cascade.xml')
-            while event != 'Finished5':
+            if not cap.isOpened():
+                # person_cascade = cv2.CascadeClassifier('./haarcascade_fullbody.xml')
+                # ball_cascade = cv2.CascadeClassifier('./ball_cascade.xml')
+                print('capture failed to open')
+            player_idx = 0
+            while event != 'Finished5' and not game_over(players):
                 # camera code
                 event, values = window.read(timeout=20)
                 # print(event)
@@ -360,27 +378,80 @@ while True:
                     if mp2_misses == 5:
                         window['e2'].update('E')
 
-                ret, frame = cap.read()
 
                 # while system is in calibration mode -> yellow light
                 # if player is not detected, LED -> red light
 
-                persons = person_cascade.detectMultiScale(frame, 1.1, 1)
-                balls = ball_cascade.detectMultiScale(frame, 1.3, 3, 8)
-                # To draw a rectangle in each persons
-                cv2.imshow('Ball detection', frame)
-                for (x,y,w,h) in balls:
-                   cv2.rectangle(frame,(x,y),(x+w,y+h),(0,0,255),2)
-                   font = cv2.FONT_HERSHEY_DUPLEX
-                   cv2.putText(frame, 'Ball', (x + 6, y - 6), font, 0.5, (0, 0, 255), 1)
-                for (x,y,w,h) in persons:
-                  cv2.rectangle(frame,(x,y),(x+w,y+h),(0,255,0),2)
-                  font = cv2.FONT_HERSHEY_DUPLEX
-                  cv2.putText(frame, 'Person', (x + 6, y - 6), font, 0.5, (0, 255, 0), 1)
-                #Display frames in a window
-                cv2.imshow('Ball detection', frame)
-                imgbytes = cv2.imencode('.png', frame)[1].tobytes()
+                _, frame = cap.read()
+
+                player = players[player_idx % 2]
+                if not player['ready_for_shot']:
+                    # print('in not ready for shot')
+                    if player['focal_length'] is not None and not player['waited_for_person_to_move']:
+                        print('Move to the location you want to shoot the ball from...')
+                        if player['required_distance'] > 0:
+                            print('You must make it from ' + str(player['required_distance']) + ' away...')
+                        for i in range(wait_secs):
+                            print(str(wait_secs - i), end=', ')
+                            sleep(1)
+                        print()
+                        player['waited_for_person_to_move'] = True
+
+                    player['person'] = find_motionless_person(player['p_frames'], frame)
+
+                    if player['person'] is not None:
+                        # print('found person')
+                        if not player['focal_length']:
+                            player['focal_length'] = get_focal_length(player['person'][h_ind], dist_5ft_to_basket, player['height_inches'])
+                            player['p_frames'] = []
+
+                        player['distance_inches'] = get_person_distance(player['focal_length'], player['height_inches'], player['person'][h_ind])
+
+                        player_in_range = (player['required_distance'] > 0 and .95 * player['required_distance'] <= player['distance_inches'] <= 1.05 * player['required_distance']) or player['required_distance'] <= 0
+                        if player_in_range:
+                            player['ready_for_shot'] = True
+                        else:
+                            print('please stand ' + str(player['required_distance']) + ' away...')
+
+                elif player['ready_for_shot']:
+                    ball_ready, held_ball = check_holding_ball(frame, player['person'])
+
+                    if ball_ready:
+                        # shot_made = listen_for_shot()
+                        shot_made = True if player_idx % 2 != 0 else False
+                        print('Shot made!' if shot_made else 'Shot missed!')
+
+                        player_idx += 1
+                        next_player = players[player_idx % 2]
+
+                        if shot_made:
+                            next_player['required_distance'] = player['distance_inches'] if player['required_distance'] <= 0 else 0
+                        else:
+                            if player['required_distance'] > 0:
+                                player['misses'] += 1
+
+                                print('Player ' + str(player['id']) + ' has ' + str(player['misses']) + ' misses')
+
+
+                        player['distance_inches'] = 0
+                        player['required_distance'] = 0
+                        player['person'] = None
+                        player['p_frames'] = []
+                        player['ready_for_shot'] = False
+                        player['waited_for_person_to_move'] = False
+                        player['taking_turn'] = False
+                        player['waited_for_person_to_move'] = False
+
+                        next_player['taking_turn'] = True
+
+
+
+                imgbytes = resize_frame(frame, 130)
                 window['mp_image'].update(data=imgbytes)
+
+
+
+
                 # update shot chart with makes/misses when
                 # also need to account fo three point makes/misses
 #                 if (cam == 1 and sonic == 1):

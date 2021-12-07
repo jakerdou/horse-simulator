@@ -1,4 +1,5 @@
 from math import floor
+dist_5ft_to_basket = 60
 
 wait_secs = 5
 
@@ -15,4 +16,12 @@ y_ind = 1
 w_ind = 2
 h_ind = 3
 
-#
+'''
+Make it so that message to move pops up every so often (actually maybe not bc the gui can take care of it)
+
+Let the person know when they are good to shoot
+
+have custom messaging for calibrating height
+
+Take input from text boxes
+'''

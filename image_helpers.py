@@ -185,7 +185,8 @@ def get_person_distance(focal_length, height_inches, height_pixels):
 	distance_inches = (focal_length * height_inches) / height_pixels
 
 	# TODO: put in GUI
-	print('You are ' + str(distance_inches)[0:6] + ' inches away, hold the ball at about eye level...')
+	print('You are ' + str(distance_inches)[0:6] + ' inches away')
+	# print('You are ' + str(distance_inches)[0:6] + ' inches away, hold the ball at about eye level...')
 
 	return distance_inches
 
