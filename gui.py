@@ -122,7 +122,7 @@ while True:
                     if height_calibrated and not waited_for_person_to_move:
                         print('Move to the location you want to shoot the ball...')
                         for i in range(wait_secs):
-                            window['sa_instruction'].update(str(wait_secs - i), end=', ')
+                            window['sa_instruction'].update(str(wait_secs - i) + ', ')
                             print(str(wait_secs - i), end=', ')
                             sleep(1)
                         print()
