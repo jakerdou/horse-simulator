@@ -125,6 +125,7 @@ while True:
                     if height_calibrated and not waited_for_person_to_move:
                         print('Move to the location you want to shoot the ball...')
                         for i in range(wait_secs):
+                            window['sa_instruction'].update(str(wait_secs - i), end=', ')
                             print(str(wait_secs - i), end=', ')
                             sleep(1)
                         print()
@@ -162,7 +163,7 @@ while True:
                         distance = None
                         held_ball = None
                         p_frames = []
-
+                        window['sa_instruction'].update('System is in calibration mode. Move to the location you want to shoot the ball...')
                 imgbytes = resize_frame(frame, 130)
                 window['image'].update(data=imgbytes)
 
@@ -179,10 +180,10 @@ while True:
         if event == 'Finished':
             window['camera'].update(visible=False)
             window['shotchart'].update(visible=True)
-            window['sa_instruction'].update('Please stand at the free throw line for system calibration.'
-                                                                                    'The LED will change from yellow to green when calibration is finished.'
-                                                                                    ' When the LED is green, you can shoot the ball repeatedly. When you are'
-                                                                                    ' finished, click on the finished button.')
+          #  window['sa_instruction'].update('Please stand at the free throw line for system calibration.'
+          #                                                                          'The LED will change from yellow to green when calibration is finished.'
+          #                                                                       ' When the LED is green, you can shoot the ball repeatedly. When you are'
+          #                                                                          ' finished, click on the finished button.')
             court(axes)
             fig_canvas_agg = draw_figure(window['Canvas'].TKCanvas, fig)
         # click ok to close shot chart and return to menu

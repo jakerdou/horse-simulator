@@ -38,10 +38,7 @@ multiplayer_layout = [
     [sg.Button('Cancel')]
 ]
 
-col = sg.Column([[sg.Frame('Instructions', [[sg.Text(), sg.Column([[sg.Text('Please stand at the free throw line for system calibration.'
-                                                                                    'The LED will change from yellow to green when calibration is finished.'
-                                                                                    ' When the LED is green, you can shoot the ball repeatedly. When you are'
-                                                                                    ' finished, click on the finished button.', size=(60, 4), font='Helvetica 14', key='sa_instruction')]])]], font='Helvetica 15')]], pad=(0,0))
+col = sg.Column([[sg.Frame('Instructions', [[sg.Text(), sg.Column([[sg.Text('System is in calibration mode. Move to the location you want to shoot the ball...', size=(60, 4), font='Helvetica 14', key='sa_instruction')]])]], font='Helvetica 15')]], pad=(0,0))
 camera_layout = [
     [sg.Text('Court View', size=(40, 1), justification='center', font='Helvetica 20')],
     [sg.Image(filename='', key='image')], [sg.HorizontalSeparator()] , [col],
@@ -54,10 +51,7 @@ col2 = sg.Column([[sg.Frame('Player Score', [[sg.Text(), sg.Column([[sg.Text('Hi
                                                                     [sg.Text('Letters:', font='Helvetica 12', justification='center')], [sg.Text('', justification='center', font='Helvetica 30', key='h_s')],
                                                                     [sg.Text('', justification='center', font='Helvetica 30', key='o_s')], [sg.Text('', justification='center', font='Helvetica 30', key='r_s')],
                                                                     [sg.Text('', justification='center', font='Helvetica 30', key='s_s')], [sg.Text('', justification='center', font='Helvetica 30', key='e_s')]], size=(120, 480))]], font='Helvetica 15')]], pad=(0,0))
-col3 = sg.Column([[sg.Frame('Shot Instruction', [[sg.Text(), sg.Column([[sg.Text('Please stand at the free throw line for system calibration.'
-                                                                                    'The LED will change from yellow to green when calibration is finished.'
-                                                                                    ' When the LED is green, you can shoot the ball repeatedly. When you are'
-                                                                                    ' finished, click on the finished button.', size=(70, 3), key='single_instruction', font='Helvetica 15')]])]], font='Helvetica 15')]], pad=(0,0))
+col3 = sg.Column([[sg.Frame('Shot Instruction', [[sg.Text(), sg.Column([[sg.Text('System is in calibration mode. Move to the location you want to shoot the ball...', size=(70, 3), key='single_instruction', font='Helvetica 15')]])]], font='Helvetica 15')]], pad=(0,0))
 singleplayer_scoreboard = [
     [sg.Text('Scoreboard', size=(25, 1), justification='center', font='Helvetica 40')],
     [col1, col2], [col3],
@@ -71,10 +65,7 @@ col5 = sg.Column([[sg.Frame('Player 1 Score', [[sg.Text(), sg.Column([[sg.Text('
 col6 = sg.Column([[sg.Frame('Player 2 Score', [[sg.Text(), sg.Column([[sg.Text('', justification='center', font='Helvetica 55', key='h2')],
                                                                     [sg.Text('', justification='center', font='Helvetica 55', key='o2')], [sg.Text('', justification='center', font='Helvetica 55', key='r2')],
                                                                     [sg.Text('', justification='center', font='Helvetica 55', key='s2')], [sg.Text('', justification='center', font='Helvetica 55', key='e2')]], size=(100, 480))]], font='Helvetica 15')]], pad=(0,0))
-col7 = sg.Column([[sg.Frame('Shot Instruction', [[sg.Text(), sg.Column([[sg.Text('Please stand at the free throw line for system calibration.'
-                                                                                    'The LED will change from yellow to green when calibration is finished.'
-                                                                                    ' When the LED is green, you can shoot the ball repeatedly. When you are'
-                                                                                    ' finished, click on the finished button.', size=(84, 3), key='multi_instruction', font='Helvetica 15')]])]], font='Helvetica 15')]], pad=(0,0))
+col7 = sg.Column([[sg.Frame('Shot Instruction', [[sg.Text(), sg.Column([[sg.Text('System is in calibration mode. Move to the location you want to shoot the ball...', size=(84, 3), key='multi_instruction', font='Helvetica 15')]])]], font='Helvetica 15')]], pad=(0,0))
 multiplayer_scoreboard = [
     [sg.Text('Scoreboard', size=(30, 1), justification='center', font='Helvetica 40')],
     [col4, col5, col6], [col7],
