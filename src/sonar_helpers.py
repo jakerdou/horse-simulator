@@ -69,7 +69,7 @@ def listen_for_shot(mode):
     while time.perf_counter() - start < wait_secs + 2:
         if seconds * .95 < time.perf_counter() - start < seconds * 1.05 and time.perf_counter() - start < wait_secs:
             # TODO: put in GUI
-            window[key].update('Countdown: ' + str(wait_secs - seconds))
+            #window[key].update('Countdown: ' + str(wait_secs - seconds))
             print(str(wait_secs - seconds), end=', ')
             seconds += 1
         distance_frames.append(get_sonar_distance())

@@ -176,10 +176,10 @@ if __name__ == '__main__':
                 mode = 'menu'
            # if event == 'Finished6':
 
-           feet = values[4]
-           inches = values[5]
-           feet2 = values[6]
-           inches2 = values[7]
+            feet = values[4]
+            inches = values[5]
+            feet2 = values[6]
+            inches2 = values[7]
 
             if event == 'OK2' and feet != '' and inches != '' and feet2 != '' and inches2 != '':
                 window['multi_player'].update(visible=False)
@@ -229,7 +229,8 @@ if __name__ == '__main__':
 
                     # while system is in calibration mode -> yellow light
                     # if player is not detected, LED -> red light
-
+                    red_light()
+                    
                     _, frame = cap.read()
 
                     player = players[player_idx % 2]
@@ -277,11 +278,10 @@ if __name__ == '__main__':
 
                     elif player['ready_for_shot']:
                         ball_ready, held_ball = check_holding_ball(frame, player['person'])
-
-                        # if ball_ready:
-                        if True:
-                            # shot_made = listen_for_shot()
-                            shot_made = True if player_idx % 2 != 0 else False
+                        
+                        if ball_ready:
+                            shot_made = listen_for_shot('multi')
+#                             shot_made = True if player_idx % 2 != 0 else False
                             print('Shot made!' if shot_made else 'Shot missed!')
 
                             player_idx += 1
@@ -308,7 +308,8 @@ if __name__ == '__main__':
                             # player['taking_turn'] = False
 
                             # next_player['taking_turn'] = True
-
+                    
+#                     print('about to display frame')
                     imgbytes = resize_frame(frame, 130)
                     window['mp_image'].update(data=imgbytes)
 
