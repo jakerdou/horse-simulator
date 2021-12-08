@@ -1,3 +1,4 @@
+from src.gui import *
 def game_over(players):
     for player in players:
         if player['misses'] == 5:
@@ -10,7 +11,10 @@ def analysis_update(shotsm, shotsa, tps, tpa):
     string_shotsa = str(shotsa)
     string_tps = str(tps)
     string_fgp = str(round((shotsm / shotsa) * 100, 1)) + ' %'
-    string_threepp = str(round((tps / tpa) * 100, 1)) + ' %'
+    if tpa != 0:
+        string_threepp = str(round((tps / tpa) * 100, 1)) + ' %'
+    else:
+        string_threepp = 0
     string_twopp = str(round(((shotsm - tps) / (shotsa - tpa)) * 100, 1)) + ' %'
     window['shotsm'].update(string_shotsm)
     window['shotsa'].update(string_shotsa)

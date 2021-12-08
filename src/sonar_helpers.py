@@ -1,8 +1,9 @@
 import RPi.GPIO as GPIO
 import time
 
-from constants import *
-
+from src.constants import *
+from src.LED import *
+from src.gui import *
 #GPIO Mode (BOARD / BCM)
 GPIO.setmode(GPIO.BCM)
 
@@ -48,10 +49,19 @@ def confirm_shot(d):
     if d <= 5:
         return "Shot made"
 
-def listen_for_shot():
+def listen_for_shot(mode):
     # TODO: put in GUI
+    key = ''
+    if mode == "shootaround":
+        key = 'sa_instruction'
+    elif mode == "single":
+        key = 'single_instruction'
+    elif mode == "multi":
+        key = 'multi_instruction'
+    window[key].update('Shoot!\nYou have 5 seconds before the system will reset and you can shoot again')
     print('Shoot!\nYou have 5 seconds before the system will reset and you can shoot again')
-
+    green_light()
+    
     start = time.perf_counter()
     distance_frames = []
 
@@ -59,17 +69,18 @@ def listen_for_shot():
     while time.perf_counter() - start < wait_secs + 2:
         if seconds * .95 < time.perf_counter() - start < seconds * 1.05 and time.perf_counter() - start < wait_secs:
             # TODO: put in GUI
+            window[key].update('Countdown: ' + str(wait_secs - seconds))
             print(str(wait_secs - seconds), end=', ')
             seconds += 1
         distance_frames.append(get_sonar_distance())
-    # print('# of measurements <= 10 ' + str(len([d for d in distance_frames if d <= 10])))
-    # print('# of measurements <= 9 ' + str(len([d for d in distance_frames if d <= 9])))
-    # print('# of measurements <= 8 ' + str(len([d for d in distance_frames if d <= 8])))
-    # print('# of measurements <= 7 ' + str(len([d for d in distance_frames if d <= 7])))
-    # print('# of measurements <= 6 ' + str(len([d for d in distance_frames if d <= 6])))
-    # print('# of measurements <= 5 ' + str(len([d for d in distance_frames if d <= 5])))
+#     print('# of measurements <= 10 ' + str(len([d for d in distance_frames if d <= 10])))
+#     print('# of measurements <= 9 ' + str(len([d for d in distance_frames if d <= 9])))
+#     print('# of measurements <= 8 ' + str(len([d for d in distance_frames if d <= 8])))
+#     print('# of measurements <= 7 ' + str(len([d for d in distance_frames if d <= 7])))
+#     print('# of measurements <= 6 ' + str(len([d for d in distance_frames if d <= 6])))
+#     print('# of measurements <= 5 ' + str(len([d for d in distance_frames if d <= 5])))
 
-    if len([d for d in distance_frames if d <= 10]) >= 30:
+    if len([d for d in distance_frames if d <= 7]) >= 30:
         print('Shot made')
         return True
     else:

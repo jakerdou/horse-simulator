@@ -12,7 +12,7 @@ menu_layout = [
 shootaround_layout = [
     [sg.Text('Horse Simulator', size=(40, 1), justification='center', font='Helvetica 20')],
     [sg.Text('Shootaround Mode: Practice your shooting and get a statistical analysis of your shooting.', size=(60, 2), font='Helvetica 14')],
-    [sg.Text('Please enter your height.', font='Helvetica 12')],
+    [sg.Text('Please enter your height. After entering your height, stand 10 feet from the basket.', font='Helvetica 10')],
     [sg.Text('Feet: ', font='Helvetica 12'), sg.InputText()], [sg.Text('Inches: ', font='Helvetica 12'), sg.InputText()],
     [sg.Button('OK')],
     [sg.Button('Cancel')]

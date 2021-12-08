@@ -1,5 +1,5 @@
 from math import floor
-dist_5ft_to_basket = 60
+dist_5ft_to_basket = 120
 
 wait_secs = 5
 

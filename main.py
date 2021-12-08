@@ -9,8 +9,8 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from src.gui import *
 from src.shotchart import *
 from src.shot_generator import *
-# from src.LED import *
-# from src.sonar_helpers import *
+from src.LED import *
+from src.sonar_helpers import *
 from src.image_helpers import *
 from src.game_helpers import *
 from src.constants import *
@@ -76,7 +76,7 @@ if __name__ == '__main__':
                 p_frames = []
 
                 # TODO: put in GUI
-                print('stand ~5 feet away from the camera for height calibration')
+                print('stand ~10 feet away from the camera for height calibration')
                 for i in range(wait_secs):
                     print(str(wait_secs - i), end=', ')
                     sleep(1)
@@ -94,13 +94,14 @@ if __name__ == '__main__':
                     # frame is 480 x 640
                     _, frame = cap.read()
 
-                    # yellow_light()
+                    red_light()
                     # 1. Find motionless person in frames
                     if not ready_for_shot:
                         if height_calibrated and not waited_for_person_to_move:
                             print('Move to the location you want to shoot the ball...')
                             for i in range(wait_secs):
-                                window['sa_instruction'].update(str(wait_secs - i) + ', ')
+#                                 print("Before")
+#                                 print("After")
                                 print(str(wait_secs - i), end=', ')
                                 sleep(1)
                             print()
@@ -123,16 +124,16 @@ if __name__ == '__main__':
 
                     elif ready_for_shot:
                         # 4. See if person is holding ball up in a position to shoot
-                        # green_light()
+                        
                         ball_ready, held_ball = check_holding_ball(frame, person)
 
-                        # if ball_ready:
-                        if True:
+                        if ball_ready:
                             # 5. Check sonar to see if the shot was made
-                            # shot_made = listen_for_shot()
-                            shot_made = True
-                            print('Shot made!')
-
+                            shot_made = listen_for_shot('shootaround')
+                            if shot_made == True:
+                                makes += 1
+                            else:
+                                misses += 1
                             # 6. Reset values and start to look for motionless person again
                             waited_for_person_to_move = False
                             ready_for_shot = False
@@ -141,11 +142,11 @@ if __name__ == '__main__':
                             held_ball = None
                             p_frames = []
                             window['sa_instruction'].update('System is in calibration mode. Move to the location you want to shoot the ball...')
-                    imgbytes = resize_frame(frame, 130)
+                    imgbytes = resize_frame(frame, 110)
                     window['image'].update(data=imgbytes)
 
                 # made shots, shots attempted, three point makes , three point attempts
-                # analysis_update(23, 45, 18, 30)
+                analysis_update(makes, makes + misses, three_makes, three_makes + three_misses)
 
             #cancel and go back to menu page
             if event == 'Cancel':
@@ -157,10 +158,6 @@ if __name__ == '__main__':
             if event == 'Finished':
                 window['camera'].update(visible=False)
                 window['shotchart'].update(visible=True)
-              #  window['sa_instruction'].update('Please stand at the free throw line for system calibration.'
-              #                                                                          'The LED will change from yellow to green when calibration is finished.'
-              #                                                                       ' When the LED is green, you can shoot the ball repeatedly. When you are'
-              #                                                                          ' finished, click on the finished button.')
                 court(axes)
                 fig_canvas_agg = draw_figure(window['Canvas'].TKCanvas, fig)
             # click ok to close shot chart and return to menu
@@ -261,7 +258,8 @@ if __name__ == '__main__':
                     player = players[player_idx % 2]
                     if not player['received_calibration_message']:
                         # TODO: put in GUI
-                        print('stand ~5 feet away from the camera for height calibration')
+                        
+                        print('stand ~10 feet away from the camera for height calibration')
                         for i in range(wait_secs):
                             print(str(wait_secs - i), end=', ')
                             sleep(1)
