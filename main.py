@@ -176,11 +176,12 @@ if __name__ == '__main__':
                 mode = 'menu'
            # if event == 'Finished6':
 
-            if event == 'OK2':
-                feet = values[4]
-                inches = values[5]
-                feet2 = values[6]
-                inches2 = values[7]
+           feet = values[4]
+           inches = values[5]
+           feet2 = values[6]
+           inches2 = values[7]
+
+            if event == 'OK2' and feet != '' and inches != '' and feet2 != '' and inches2 != '':
                 window['multi_player'].update(visible=False)
                 window['multiplayer_scoreboard'].update(visible=True)
 
@@ -196,18 +197,19 @@ if __name__ == '__main__':
                 for i in range(num_players):
                     player = {
                         'id': i + 1,
-                        'focal_length': None,
-                        'misses': 0,
                         # TODO: get this to change based on input
+                        # 'height_inches': (12 * feet + inches) if i == 0 else (12 * feet2 + inches2),
                         'height_inches': 60,
-                        'distance_inches': 0,
-                        'required_distance': 0,
-                        'person': None, # an instance of object person that indicates where they will shoot from
-                        'p_frames': [],
-                        'ready_for_shot': False,
-                        'waited_for_person_to_move': False,
                         'received_calibration_message': False,
-                        'taking_turn': True
+                        'focal_length': None,
+                        'waited_for_person_to_move': False,
+                        'p_frames': [],
+                        'person': None, # an instance of person object that indicates where they will shoot from
+                        'distance_inches': 0,
+                        'ready_for_shot': False,
+                        'required_distance': 0,
+                        'misses': 0,
+                        # 'taking_turn': True
                     }
                     players.append(player)
 
@@ -224,31 +226,6 @@ if __name__ == '__main__':
                     if event == 'a:38':
                         distance = distance_selector()
                         window['multi_instruction'].update(shot_select(distance))
-                    # update letter when there is a miss
-                    if event == 'b:56':
-                        mp1_misses += 1
-                        mp2_misses += 1
-                        if mp1_misses == 1:
-                            window['h1'].update('H')
-                        if mp1_misses == 2:
-                            window['o1'].update('O')
-                        if mp1_misses == 3:
-                            window['r1'].update('R')
-                        if mp1_misses == 4:
-                            window['s1'].update('S')
-                        if mp1_misses == 5:
-                            window['e1'].update('E')
-                        if mp2_misses == 1:
-                            window['h2'].update('H')
-                        if mp2_misses == 2:
-                            window['o2'].update('O')
-                        if mp2_misses == 3:
-                            window['r2'].update('R')
-                        if mp2_misses == 4:
-                            window['s2'].update('S')
-                        if mp2_misses == 5:
-                            window['e2'].update('E')
-
 
                     # while system is in calibration mode -> yellow light
                     # if player is not detected, LED -> red light
@@ -268,8 +245,6 @@ if __name__ == '__main__':
                         player['received_calibration_message'] = True
 
                     elif not player['ready_for_shot']:
-                        # print(player['focal_length'])
-                        # print(player['waited_for_person_to_move'])
                         player['person'] = find_motionless_person(player['p_frames'], frame)
 
                         if player['person'] is not None:
@@ -318,6 +293,10 @@ if __name__ == '__main__':
                                 if player['required_distance'] > 0:
                                     player['misses'] += 1
 
+                                    # update GUI with letters player has
+                                    letter_id, letter = get_letter(player)
+                                    window[letter_id].update(letter)
+
                                     print('Player ' + str(player['id']) + ' has ' + str(player['misses']) + ' misses')
 
                             player['distance_inches'] = 0
@@ -326,11 +305,9 @@ if __name__ == '__main__':
                             player['p_frames'] = []
                             player['ready_for_shot'] = False
                             player['waited_for_person_to_move'] = False
-                            player['taking_turn'] = False
+                            # player['taking_turn'] = False
 
-                            next_player['taking_turn'] = True
-
-
+                            # next_player['taking_turn'] = True
 
                     imgbytes = resize_frame(frame, 130)
                     window['mp_image'].update(data=imgbytes)

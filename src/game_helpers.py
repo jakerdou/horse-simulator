@@ -22,3 +22,12 @@ def analysis_update(shotsm, shotsa, tps, tpa):
     window['fgp'].update(string_fgp)
     window['threepp'].update(string_threepp)
     window['twopp'].update(string_twopp)
+
+def get_letter(player):
+    letters = ['H', 'O', 'R', 'S', 'E']
+
+    letter = letters[player['misses'] - 1]
+
+    letter_id = letter.lower() + str(player['id'])
+
+    return letter_id, letter
