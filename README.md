@@ -9,5 +9,3 @@ To run:
 install dependencies listed in requirements.txt
 
 Then run ```python main.py```
-
-![Final report](./Horse\ SImulator\ Final\ Report.pdf)
